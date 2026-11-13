@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: AGPL-3.0-only
+# Copyright (c) 2026 Kasra Farsoudi
 """Submit ONE file to a Brightspace (D2L) dropbox folder, via the real UI.
 
 Why a browser: D2L's upload endpoint refuses bare HTTP posts.

@@ -89,6 +89,11 @@ detection, credential storage) is implemented but **untested**.
 - `auth.json` contains live session cookies; treat it like a password.
 - Do not sync the data directory to untrusted hosts.
 
+## License
+
+Licensed under the GNU Affero General Public License v3.0 only
+(`AGPL-3.0-only`). See [LICENSE](LICENSE).
+
 ## For agents
 
 - `AGENTS.md` — one-time runtime setup and login instructions.
@@ -96,3 +101,9 @@ detection, credential storage) is implemented but **untested**.
   workflow.
 
 Humans do not need to read either file.
+
+---
+
+Not affiliated with, endorsed by, or sponsored by the University of Southern
+California. USC, Brightspace, Piazza, and Gradescope are trademarks of their
+respective owners.

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: AGPL-3.0-only
+# Copyright (c) 2026 Kasra Farsoudi
 """Log in to USC course tools and cache the resulting session locally.
 
     python3 scripts/auth.py login

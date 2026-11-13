@@ -1,6 +1,7 @@
 ---
 name: course-tools
 description: Use when the user says "pull from brightspace", "check brightspace", "my grades", "what's due", "assignments", "submissions", "notifications", "get me up to date", "check Piazza", "check Gradescope", or otherwise asks about USC course tools. Also use when asked to set up, log in, refresh, or troubleshoot course-tools. Provides the local-login REST/Lite recipes for Brightspace (D2L), Piazza, and Gradescope.
+license: AGPL-3.0-only
 compatibility: Requires Python 3.10+, Playwright, Chrome/Edge/Chromium, and a desktop session for interactive login.
 ---
 

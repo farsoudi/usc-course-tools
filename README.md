@@ -14,68 +14,56 @@ access. The only write action is a dropbox submission you explicitly ask for.
 ## What you can ask
 
 - "What's due this week across my USC classes?"
-- "How am I doing in EE-477 on Brightspace?"
-- "Anything new in my CSCI-467 announcements?"
-- "What's new on Piazza?"
+- "How are my grades in EE-477?"
+- "How's the curve looking in CSCI-103?"
+- "What's due in BUAD-304 this week?"
+- "Anything new in my course announcements?"
+- "What are students asking the professor on Piazza?"
 - "When is my next Gradescope assignment due?"
-- "Submit report.pdf to Lab 2"
-
-## Requirements
-
-- Python 3.10+
-- [uv](https://docs.astral.sh/uv/) (recommended) or pip
-- Google Chrome, Microsoft Edge, or Playwright's bundled Chromium
-- A desktop session — login opens a real browser window
-
-## Quick start
-
-1. Install the skill for your harness (see below).
-2. Log in:
-
-   ```bash
-   uv run scripts/auth.py login
-   ```
-
-3. Check what is live:
-
-   ```bash
-   uv run scripts/auth.py status
-   ```
-
-`login` opens a dedicated browser profile. Log in normally, including SSO/MFA.
-The script waits, captures cookies, validates each service, and saves them outside
-this repository. No cookie-export extension is needed. Rerun
-`login --service brightspace` when a session expires.
-
-Without uv:
-
-```bash
-python3 -m pip install playwright
-python3 scripts/auth.py login
-```
-
-If Chrome and Edge are both missing, install Playwright's Chromium once:
-
-```bash
-uvx playwright install chromium          # uv
-python3 -m playwright install chromium   # pip
-```
+- "Pull my graded MATH-407 exam and help me draft a regrade request"
+- "Submit an assignment to my Brightspace dropbox"
+- "Pull all of Puvvada's lecture material into a new directory, and generate a lecture html"
 
 ## Install
 
-Copy the whole `course-tools` folder into the skills directory for the harness
-you use. No symlinks are required.
+Run one command for the agent you use.
 
-| Harness | Where to put it |
-|---|---|
-| opencode | `~/.config/opencode/skills/course-tools` (or `.opencode/skills/`) |
-| Claude Code | `~/.claude/skills/course-tools` (or `.claude/skills/`) |
-| Codex | `~/.agents/skills/course-tools` (or `.agents/skills/`) |
-| Other Agent Skills hosts | Any path that expects `<name>/SKILL.md` |
+**opencode**
 
-If you are already talking to an agent, ask it to install the skill for its own
-harness; it can copy the folder and handle the dependencies. Do not put this
-under `~/.claude/skills/synced/` or Codex's `.system/` directory.
+```bash
+npx skills add farsoudi/usc-course-tools -g -a opencode -y
+```
+
+**Claude Code**
+
+```bash
+npx skills add farsoudi/usc-course-tools -g -a claude-code -y
+```
+
+**Codex**
+
+```bash
+npx skills add farsoudi/usc-course-tools -g -a codex -y
+```
+
+That installs the skill. The first time you use it, your agent finishes setup and
+opens the login window. The command needs Node.js 22.20 or newer; if `npx` is
+missing, install Node or ask your agent to. Add `--copy` if you prefer copied
+files over symlinks.
+
+## First run
+
+After installing, ask your agent:
+
+> set up course-tools and log me in
+
+The agent reads `AGENTS.md`, installs any missing runtime (Python, Playwright,
+and Chromium if needed), and opens a browser window for the USC login. Log in
+normally, including SSO/MFA. You never need to install Python or run Python
+commands yourself.
+
+In opencode, setup also asks whether you want a `/course-tools` shortcut. Claude
+Code and Codex already have native invocation, so they skip that question.
 
 ## Where credentials live
 
@@ -88,24 +76,12 @@ Outside this repository, in `COURSE_TOOLS_DATA_DIR` or the platform default:
 | Windows | `%LOCALAPPDATA%\course-tools\` |
 
 `auth.json` is written with mode `600`; the browser profile lives in the same
-directory. `.env` and `auth.json` are gitignored. Copy `.env.dist` to `.env` only
-if you want to override the data directory or browser.
-
-## Submitting files
-
-Only when you explicitly ask:
-
-```bash
-uv run scripts/submit_dropbox.py --ou <course> --db <folder> --file <file>
-```
-
-The agent resolves the course and dropbox folder for you.
+directory. Credentials are never committed.
 
 ## Platforms
 
 Linux and macOS are the tested targets. Windows support (paths, browser
-detection, credential storage) is implemented but **untested**; please report
-issues.
+detection, credential storage) is implemented but **untested**.
 
 ## Privacy
 
@@ -113,7 +89,10 @@ issues.
 - `auth.json` contains live session cookies; treat it like a password.
 - Do not sync the data directory to untrusted hosts.
 
-## Technical details
+## For agents
 
-`SKILL.md` is the agent-facing runbook: endpoints, read-only rules, and the
-submission workflow. Humans do not need to read it.
+- `AGENTS.md` — one-time runtime setup and login instructions.
+- `SKILL.md` — the technical runbook: endpoints, read-only rules, and submission
+  workflow.
+
+Humans do not need to read either file.

@@ -1,8 +1,4 @@
-#!/usr/bin/env -S uv run --script
-# /// script
-# requires-python = ">=3.10"
-# dependencies = ["playwright"]
-# ///
+#!/usr/bin/env python3
 """Submit ONE file to a Brightspace (D2L) dropbox folder, via the real UI.
 
 Why a browser: D2L's upload endpoint refuses bare HTTP posts.
@@ -20,9 +16,9 @@ Works for any course: pass --ou (course org unit) and --db (dropbox folder).
 
 --dry-run uploads and stages the file, then stops before the final Submit.
 
-Requires: run `uv run scripts/auth.py login` first (or `python3 -m pip install
-playwright`). Cookies come from the local auth store, not this directory.
-Uses installed Chrome/Edge when available, else bundled Chromium.
+Requires: run `python3 scripts/auth.py login` first and have Playwright
+installed (see AGENTS.md). Cookies come from the local auth store, not this
+directory. Uses installed Chrome/Edge when available, else bundled Chromium.
 
 ALWAYS get explicit user authorisation before submitting. Never submit as part of
 a read-only request.
@@ -41,8 +37,8 @@ try:
     from playwright.sync_api import sync_playwright
 except ImportError:
     sys.exit("playwright is not installed for this interpreter.\n"
-             "  uv run scripts/auth.py login\n"
-             "or: python3 -m pip install playwright")
+             "Ask your agent to run the setup in AGENTS.md, or install it with:\n"
+             "  python3 -m pip install playwright")
 
 BASE = "https://brightspace.usc.edu"
 UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
@@ -67,7 +63,7 @@ def load_cookies():
         out.append(ck)
     if not out:
         sys.exit("no Brightspace cookies found - run: "
-                 "uv run scripts/auth.py login --service brightspace")
+                 "python3 scripts/auth.py login --service brightspace")
     return out
 
 
@@ -149,7 +145,7 @@ def verify(ou, db, expect_name):
     headers = {"User-Agent": UA, "Accept": "application/json"}
     headers.update(auth.auth_headers("brightspace", "brightspace.usc.edu"))
     if not headers.get("Cookie"):
-        sys.exit("not logged in - run: uv run scripts/auth.py login --service brightspace")
+        sys.exit("not logged in - run: python3 scripts/auth.py login --service brightspace")
     req = urllib.request.Request(
         "%s/d2l/api/le/1.67/%d/dropbox/folders/%d/submissions/" % (BASE, ou, db),
         headers=headers)
@@ -212,7 +208,7 @@ def main():
                     sys.exit("could not launch %s: %s" % (channel, exc))
             else:
                 sys.exit("bundled Chromium is not installed. Run: "
-                         "uvx playwright install chromium")
+                         "python3 -m playwright install chromium")
         ctx = browser.new_context(user_agent=UA, viewport={"width": 1440, "height": 900})
         ctx.add_cookies(load_cookies())
         page = ctx.new_page()
@@ -223,7 +219,7 @@ def main():
         print("  page: %s" % title)
         if "Sign in" in page.inner_text("body")[:2000]:
             sys.exit("session expired - run: "
-                     "uv run scripts/auth.py login --service brightspace")
+                     "python3 scripts/auth.py login --service brightspace")
 
         attach_file(page, a.file, "dialogs/file/main.d2l")
 

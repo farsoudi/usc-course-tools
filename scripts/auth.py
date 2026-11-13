@@ -1,13 +1,9 @@
-#!/usr/bin/env -S uv run --script
-# /// script
-# requires-python = ">=3.10"
-# dependencies = ["playwright"]
-# ///
+#!/usr/bin/env python3
 """Log in to USC course tools and cache the resulting session locally.
 
-    uv run scripts/auth.py login
-    uv run scripts/auth.py status
-    uv run scripts/auth.py path
+    python3 scripts/auth.py login
+    python3 scripts/auth.py status
+    python3 scripts/auth.py path
 
 The browser window is a normal Chrome/Edge/Chromium window using a dedicated
 profile under the course-tools data directory. Log in by hand; the script waits,
@@ -17,11 +13,7 @@ credentials.
 Secrets are stored outside this repository, at COURSE_TOOLS_DATA_DIR or the
 platform default. Windows support is implemented but untested.
 
-Requires Python 3.10+ and Playwright. With uv:
-    uv run scripts/auth.py login
-Without uv:
-    python3 -m pip install playwright
-    python3 scripts/auth.py login
+Requires Python 3.10+ and Playwright. Agent setup is documented in AGENTS.md.
 """
 
 from __future__ import annotations
@@ -347,7 +339,7 @@ def _print_status(services: list[str], as_json: bool) -> int:
             mark = "OK" if result["ok"] else "EXPIRED"
             print(f"{SERVICES[service]['label']:<12} {mark:<8} {result['detail']}")
         if not all_ok:
-            print("\nRun: uv run scripts/auth.py login [--service NAME]")
+            print("\nRun: python3 scripts/auth.py login [--service NAME]")
     return 0 if all_ok else 1
 
 
@@ -473,8 +465,8 @@ def login(services: list[str], browser: str, timeout: int) -> int:
     except ImportError:
         raise SystemExit(
             "playwright is not installed.\n"
-            "  uv run scripts/auth.py login\n"
-            "or: python3 -m pip install playwright"
+            "Ask your agent to run the setup in AGENTS.md, or install it with:\n"
+            "  python3 -m pip install playwright"
         )
 
     channel = pick_browser(browser)
@@ -498,11 +490,11 @@ def login(services: list[str], browser: str, timeout: int) -> int:
             if channel:
                 raise SystemExit(
                     f"could not launch {label}: {exc}\n"
-                    "Try: uv run scripts/auth.py login --browser chromium"
+                    "Try: python3 scripts/auth.py login --browser chromium"
                 )
             raise SystemExit(
                 "bundled Chromium is not installed.\n"
-                "  uvx playwright install chromium"
+                "  python3 -m playwright install chromium"
             )
 
         try:
@@ -605,7 +597,7 @@ def main(argv: list[str] | None = None) -> int:
                 print(json.dumps({"data_dir": str(data_dir()), "auth_file": str(auth_path()), "services": {}}))
             else:
                 print(f"no auth file yet: {auth_path()}")
-                print("Run: uv run scripts/auth.py login")
+                print("Run: python3 scripts/auth.py login")
             return 1
         return _print_status(services, args.json)
 

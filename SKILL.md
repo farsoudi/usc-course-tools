@@ -1,7 +1,7 @@
 ---
 name: course-tools
-description: Use when the user says "pull from brightspace", "check brightspace", "my grades", "what's due", "assignments", "submissions", "notifications", "get me up to date", "check Piazza", "check Gradescope", or otherwise asks about USC course tools. Provides the local-login REST/Lite recipes for Brightspace (D2L), Piazza, and Gradescope.
-compatibility: Requires Python 3.10+, uv or pip, Chrome/Edge/Chromium, and a desktop session for interactive login.
+description: Use when the user says "pull from brightspace", "check brightspace", "my grades", "what's due", "assignments", "submissions", "notifications", "get me up to date", "check Piazza", "check Gradescope", or otherwise asks about USC course tools. Also use when asked to set up, log in, refresh, or troubleshoot course-tools. Provides the local-login REST/Lite recipes for Brightspace (D2L), Piazza, and Gradescope.
+compatibility: Requires Python 3.10+, Playwright, Chrome/Edge/Chromium, and a desktop session for interactive login.
 ---
 
 # USC course-tools access runbook (Brightspace + Piazza + Gradescope)
@@ -14,8 +14,16 @@ exam dates, Piazza, or Gradescope. Trigger phrases include "pull from
 brightspace", "check brightspace", "my grades", "what's due", "when's my exam",
 "get me up to date", "check Piazza / Gradescope".
 
+Also load this when the user asks to set up, log in, refresh, or troubleshoot
+course-tools.
+
 Do **not** use this for generic Brightspace questions about how the tool works —
 only for acting on the user's own accounts.
+
+## On invocation
+
+If this skill is loaded with no request, say course-tools is ready and wait. If
+the invocation included a request, treat it as the task.
 
 ## What this covers
 
@@ -46,30 +54,57 @@ Run these commands from the skill directory (the folder containing this
 exposes it as `${CLAUDE_SKILL_DIR}`. If the current directory is elsewhere, use
 absolute paths.
 
+Runtime setup — including installing Python, creating a venv, and installing
+Playwright — is documented in `AGENTS.md`. Use the interpreter it prepares
+(typically `<data-dir>/venv/bin/python`; Windows:
+`<data-dir>\venv\Scripts\python.exe`). Commands below use `python3` as shorthand.
+
 Credentials live **outside this repository** in the directory named by
 `COURSE_TOOLS_DATA_DIR` (or the platform default — see `.env.dist`). Copy
 `.env.dist` to `.env` only if you need to override it.
 
 ```bash
-uv run scripts/auth.py login      # opens a browser; log in by hand
-uv run scripts/auth.py status     # what is live / expired cookies
-uv run scripts/auth.py path       # where auth.json lives
+python3 scripts/auth.py login      # opens a browser; log in by hand
+python3 scripts/auth.py status     # what is live / expired cookies
+python3 scripts/auth.py path       # where auth.json lives
 ```
 
 `login` captures the live browser session (cookies, including HttpOnly),
 validates each service, and writes `auth.json` with mode `600`. If a call returns
 401/403 or a login page, or `status` lists an expired cookie, run
-`uv run scripts/auth.py login --service <name>` and retry. Never ask the user to
-export or paste cookies.
+`python3 scripts/auth.py login --service <name>` and retry. Never ask the user to
+export or paste cookies. Windows is implemented but currently untested.
 
-Without uv: `python3 -m pip install playwright`, then run the script with
-`python3`. Windows is implemented but currently untested.
+### First-time harness setup
+
+Detect the harness and use its native command behavior:
+
+- **Claude Code:** the installed skill is `/course-tools`; do nothing.
+- **Codex:** use `$course-tools` or `/skills`; do nothing.
+- **opencode:** if `~/.config/opencode/commands/course-tools.md` is missing, ask
+  the user once: "Do you want a `/course-tools` shortcut?" If yes, create the
+  file below; if no, skip it. Never overwrite an existing command file. Use the
+  global path for a global install; use `.opencode/commands/` for a project-local
+  install.
+- **Other harnesses:** skip unless you know their command mechanism.
+
+```md
+---
+description: Load the course-tools skill and wait for a request.
+---
+
+Use the `course-tools` skill. Load it with the skill tool.
+User request (may be empty): $ARGUMENTS
+
+If the request is empty, say course-tools is ready and wait. Otherwise, proceed.
+```
 
 ## Files in this skill
 
 - `scripts/auth.py` — login, status, and the local credential store.
 - `scripts/submit_dropbox.py` — **the only write action**: submits one file to a
   D2L dropbox by driving the real browser UI (see "Assignment submission").
+- `AGENTS.md` — one-time runtime setup (Python/Playwright/login).
 - `.env.dist` — sample config; `.env` is ignored.
 - Data dir (outside the repo): `auth.json` and `browser-profile/`.
 
@@ -250,12 +285,12 @@ Content.
 matched on `Name`. Always show the user the resolved folder + file before firing.
 
 **Use `scripts/submit_dropbox.py` — never replay the HTTP flow by hand.**
-Run `uv run scripts/auth.py login` first.
+Run `python3 scripts/auth.py login` first.
 
 ```bash
-uv run scripts/submit_dropbox.py --ou <ou> --db <db> --file report.pdf
-uv run scripts/submit_dropbox.py --ou <ou> --db <db> --file report.pdf --dry-run
-uv run scripts/submit_dropbox.py --ou <ou> --db <db> --file report.pdf --verify-only
+python3 scripts/submit_dropbox.py --ou <ou> --db <db> --file report.pdf
+python3 scripts/submit_dropbox.py --ou <ou> --db <db> --file report.pdf --dry-run
+python3 scripts/submit_dropbox.py --ou <ou> --db <db> --file report.pdf --verify-only
 ```
 
 It drives installed Chrome/Edge (or bundled Chromium), then reads the submission
@@ -277,7 +312,7 @@ never replayed successfully and is superseded by this section.
 
 1. `GET /d2l/lms/dropbox/user/folder_submit_files.d2l?ou={ou}&db={db}`.
    Title is `<assignment> - <course> - USC`; if the body says `Sign in`, the
-   session expired — run `uv run scripts/auth.py login --service brightspace`.
+   session expired — run `python3 scripts/auth.py login --service brightspace`.
 2. Click `#z_p` ("Add a File").
 3. Wait for the modal iframe whose URL contains `dialogs/file/main.d2l`.
 4. The dialog opens on a **source picker** (My Computer / My Locker / Group
@@ -378,8 +413,9 @@ Notes:
   the current term from the dashboard and only report that term by default.
 
 ## Caveats / gotchas
-- Run `uv run scripts/auth.py status` first. If a service is expired, run
-  `uv run scripts/auth.py login --service <name>` and retry.
+- Run `python3 scripts/auth.py status` first. If a service is expired, run
+  `python3 scripts/auth.py login --service <name>` and retry. See `AGENTS.md`
+  for runtime setup if Python or Playwright is missing.
 - All endpoints use the same cookie header. A stale session may return HTTP 200
   with login HTML, so detect login pages rather than trusting status codes.
 - Modern User-Agent is mandatory (else "Unsupported Browser").
